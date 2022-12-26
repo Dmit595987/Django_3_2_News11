@@ -1,23 +1,63 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from django.views.generic import ListView, CreateView
+
 from .models import News, Category
-from .forms import NewsForms, NewsFormsModel
+from .forms import NewsForms, NewsFormsModel, UserRegisterForm
+
+from django.contrib import messages
 
 
-def index(request):
-    cont = {
-        'news': News.objects.all(),
-        'title': 'Список новостей',
-    }
-    return render(request, 'news/index.html', context=cont)
+class IndexView(ListView):
+    model = News
+    template_name = 'news/index.html'
+    context_object_name = 'news'
+    paginate_by = 4
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Главная страница'
+        return context
+
+    def get_queryset(self):
+        return News.objects.filter(is_published=True).select_related('category')
+
+# def index(request):
+#     cont = {
+#         'news': News.objects.all(),
+#         'title': 'Список новостей',
+#     }
+#     return render(request, 'news/index.html', context=cont)
 
 
-def get_category(request, category_id):
-    cont = {
-        'news': News.objects.filter(category_id=category_id),
-        'category': Category.objects.get(pk=category_id),
-        'title': 'Статьи по категориям',
-        }
-    return render(request, 'news/category.html', context=cont)
+class CategoryNews(ListView):
+    model = News
+    template_name = 'news/index.html'
+    context_object_name = 'news'
+    allow_empty = False
+    paginate_by = 4
+    #queryset = News.objects.select_related('category')
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # ТАК неправильно!!!
+        # if self.object_list:
+        #     context['title'] = f'Категория: {self.object_list[0].category}'
+        # else:
+        #     context['title'] = f'Категория: не имеет статей!'
+        context['title'] = f'Категория: {Category.objects.get(pk=self.kwargs["category_id"])}'
+        return context
+
+    def get_queryset(self):
+        return News.objects.filter(category_id=self.kwargs['category_id'], is_published=True).select_related('category')
+
+
+# def get_category(request, category_id):
+#     cont = {
+#         'news': News.objects.filter(category_id=category_id),
+#         'category': Category.objects.get(pk=category_id),
+#         'title': 'Статьи по категориям',
+#         }
+#     return render(request, 'news/category.html', context=cont)
 
 
 def view_news(request, news_id):
@@ -47,3 +87,25 @@ def add_news_1(request):
     else:
         form = NewsFormsModel()
     return render(request, 'news/add_news_1.html', {'form': form})
+
+
+def register(request):
+    if request.method == 'POST':
+        form = UserRegisterForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Вы успешно зарегистрировались!")
+            return redirect('login')
+        else:
+            messages.error(request, 'Ошибка регистрации')
+    else:
+        form = UserRegisterForm()
+    return render(request, 'news/register.html', {'form': form})
+
+
+def login(request):
+    return render(request, 'news/login.html')
+
+
+def logout(request):
+    return render(request, 'news/logout.html')
