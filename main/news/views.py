@@ -2,8 +2,8 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import ListView, CreateView
 
 from .models import News, Category
-from .forms import NewsForms, NewsFormsModel, UserRegisterForm
-
+from .forms import NewsForms, NewsFormsModel, UserRegisterForm, UserLoginForm
+from django.contrib.auth import login, logout
 from django.contrib import messages
 
 
@@ -93,9 +93,10 @@ def register(request):
     if request.method == 'POST':
         form = UserRegisterForm(request.POST)
         if form.is_valid():
-            form.save()
+            user = form.save()
+            login(request, user)
             messages.success(request, "Вы успешно зарегистрировались!")
-            return redirect('login')
+            return redirect('index')
         else:
             messages.error(request, 'Ошибка регистрации')
     else:
@@ -103,9 +104,18 @@ def register(request):
     return render(request, 'news/register.html', {'form': form})
 
 
-def login(request):
-    return render(request, 'news/login.html')
+def user_login(request):
+    if request.method == 'POST':
+        form = UserLoginForm(data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            return redirect('index')
+    else:
+        form = UserLoginForm()
+    return render(request, 'news/login.html',  {'form': form})
 
 
-def logout(request):
-    return render(request, 'news/logout.html')
+def user_logout(request):
+    logout(request)
+    return redirect('login')

@@ -11,7 +11,7 @@ urlpatterns = [
     path('news/add-news/', add_news, name='add_news'),
     path('news/add_news_1/', add_news_1, name='add_news_1'),
     path('news/register/', register, name='register'),
-    path('news/login/', login, name='login'),
-    path('news/logout/', logout, name='logout'),
+    path('news/login/', user_login, name='login'),
+    path('news/logout/', user_logout, name='logout'),
 ]
 
